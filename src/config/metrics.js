@@ -5,3 +5,4 @@ const { height, width } = Dimensions.get('window');
 
 export const DEVICE_HEIGHT = height;
 export const DEVICE_WIDTH = width;
+export const BOARD_SIDE = width * .75;
