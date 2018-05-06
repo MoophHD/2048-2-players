@@ -18,19 +18,21 @@ import { BOARD_SIDE } from "config/metrics";
 import * as Animatable from 'react-native-animatable';
 
 // metrics
-const CELLS = 4;
+const CELLS = 3;
 const CELL_PADDING = 2.5;
 const BOARD_PADDING = 5 - CELL_PADDING;
-const CELL_SIDE = ( BOARD_SIDE - 2*BOARD_PADDING) / 4;
+
+const CELL_SIDE = ( BOARD_SIDE - 2*BOARD_PADDING) / CELLS;
 
 // cell / board stuff
 const TIMING = {
-    spawn: 10000
+    spawn: 125,
+    swipe: 100
 }
 
 const GESTURE_RESPONDER_CONFIG = {
   velocityThreshold: 0.3,
-  directionalOffsetThreshold: 80
+  directionalOffsetThreshold: 40
 };
 
 // let last
@@ -52,24 +54,50 @@ class Field extends Component {
         this.handleSwipe = this.handleSwipe.bind(this);
     }
     
+    getCoords(id) {
+        // pivot is centered, relative coords
+        id--;
+        
+        let y = ~~(id / CELLS);
+        
+        let x = id % CELLS;
+        return { x: CELL_SIDE * x, y: CELL_SIDE * y};
+    }
+    
+    getId(x,y) {
+        //ids are shiftet by 1
+        if (x < 0 || y < 0 || x > CELLS - 1 || y > CELLS - 1) return -1;
+        return y * CELLS + x + 1;
+    }
+    
     handleSwipe(direction, state) {
         const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
         
         switch (direction) {
+            
           case SWIPE_UP:
-            this.swipeUp();
+            this.swipeVertical(false);
             break;
           case SWIPE_DOWN:
+            this.swipeVertical(true);
             break;
           case SWIPE_LEFT:
+            this.swipeHorizontal(false);
             break;
           case SWIPE_RIGHT:
+            this.swipeHorizontal(true);
             break;
         }
     }
     
-    swipeUp() {
-        const { ids, byid } = this.state;
+    
+    swipeHorizontal( isRight=false ) {
+        
+    }
+    
+    swipeVertical( isDown=false ) {
+        let aniLegend = [];// { from: idFrom, to: idTo };
+        const byid = { ...this.state.byid };
         
         let columns = [];
         
@@ -80,8 +108,80 @@ class Field extends Component {
             }
             columns.push(col);
         }
+    
+        // revers order if to down scroll
         
-        console.log(columns);
+        if (isDown) columns.forEach((col) => col.reverse());
+    
+        for (let j = 0; j < columns.length; j++) {
+            let column = columns[j];
+            lowerCycle: for (let i = 1; i < column.length; i++) {
+                let id = column[i];
+                let value = byid[id].value;
+                //if blank empty
+                if (value == 0) continue;
+                let prevIndex = i - 1;
+                //if empty and not a wall
+                while(
+                    byid[column[prevIndex]] 
+                    && ((prevIndex != -1 && prevIndex != column.length )
+                    || byid[column[prevIndex]].value == 0)) {
+                        
+                    let prevId = column[prevIndex];
+                    let prevElem = byid[prevId];
+                    
+                    if (prevElem.value == value) {
+                        //merge
+                        aniLegend.push({ fromId: id, toId: column[prevIndex] })
+                        byid[prevId] = { value: value * 2 };
+                        byid[id].value = 0;
+                        
+                        continue lowerCycle;
+                    }
+                    prevIndex--;
+                }
+                
+                if (prevIndex < i - 1) {
+                    
+                    //move BEFORE wall || next taken block
+                    let prevId = column[prevIndex + 1];
+                    aniLegend.push({ fromId: id, toId: prevId })
+                    byid[id].value = 0;
+                    byid[prevId].value = value;
+                }
+            }
+        }
+        
+        // console.log(byid);
+        // console.log(aniLegend);
+        
+        this.setState(() => ({ byid }));
+    }
+    
+    animateSwipe(legend) {
+        let receipt = legend[0];
+        
+        let from = this.getCoords(receipt.fromId);
+        let to = this.getCoords(receipt.toId);
+        let dx = to.x - from.x;
+        let dy = to.y - from.y;
+        
+        let refKey = `cell${receipt.fromId}`;
+        let cell = this[refKey];
+        if (cell) {
+            cell.transitionTo(
+                { left: to.x, top: to.y },
+                TIMING.swipe
+            )
+        }
+        
+        
+        // Promise.all(
+        //     legend.map((recept) => {
+                
+        //         return ( )
+        //     })    
+        // );   
     }
     
     clear() {
@@ -101,7 +201,9 @@ class Field extends Component {
         
         
         this.spawn();
-        setTimeout(() => this.spawn(), 100);
+        // setTimeout(() => this.spawn(), 100);
+        
+        setTimeout(() => {this.animateSwipe([{ fromId: 2, toId: 5 }]);}, 250);
     }
     
     spawn() {
@@ -110,6 +212,9 @@ class Field extends Component {
         let freeCells = ids.slice().filter((id) => ( byid[id].value == 0 ));
         let id = freeCells[~~(Math.random()*freeCells.length)];
         let value = Math.random() < 0.1 ? 4 : 2;
+        //
+            id = 2;
+        //
         this.setState(() => ({
             byid: {
                 ...this.state.byid,
@@ -145,44 +250,55 @@ class Field extends Component {
  
                
                     <View style={s.board}>
-                    
-     
-                        {ids.map((id) => {
-                            let cell = byid[id];
-                            let value = cell.value;
-                            let cellCl;
-                            //value is too big, pick last one
-                            if (colors.hasOwnProperty(value)) {
-                                cellCl = colors[value];
-                            } else {
-                                cellCl = colors[8192];
-                            }
-                            let textCl = value > 4 ? lightTextCl : darkTextCl;
-                            return (
-                                value > 0 ?
-                                    <Animatable.View
-                                        key={id}
-                                        style={[s.cell, { backgroundColor: cellCl }]}
-                                        ref={el => { if (el) this[`cell${id}`] = el }}>
-                                        
-                                        <Text style={[s.cellValue, {color: textCl} ]}>
-                                            {value}
-                                        </Text>
-                                    </Animatable.View>
-                                    :
-                                    <View key={`underCell${id}`} style={[s.cell, { backgroundColor: underBoxColor }]} />
-                            )
-                        })}
-                        
+                        <View style={{position: "relative", flex: 1, backgroundColor:"rgba(0,0,0,0)"}}>
+                            <View style={[s.board, { backgroundColor: boardBgColor, padding: 0, left: 0, top: 0, position: "relative" }]}>
+                                {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor, position: "relative" }]} />))}
+                            </View>
+    
+         
+                            {ids.map((id) => {
+                                let cell = byid[id];
+                                let value = cell.value;
+                                let cellCl;
+                                //value is too big, pick last one
+                                if (colors.hasOwnProperty(value)) {
+                                    cellCl = colors[value];
+                                } else {
+                                    cellCl = colors[8192];
+                                }
+                                let textCl = value > 4 ? lightTextCl : darkTextCl;
+                                const pos = this.getCoords(id);
+                                return (
+                                    value > 0 &&
+                                        <Animatable.View
+                                            key={id}
+                                            style={[s.cell, { backgroundColor: cellCl,
+                                                              left: pos.x,
+                                                              top: pos.y
+                                            }]}
+                                            
+                                            ref={el => { if (el) this[`cell${id}`] = el }}>
+                                            
+                                            <Text style={[s.cellValue, {color: textCl} ]}>
+                                                {value}
+                                            </Text>
+                                        </Animatable.View>
+                                )
+                            })}
+                        </View>
                     </View>
                 </GestureRecognizer>
         )
     }
 }
 
+        // <View style={[s.board, { backgroundColor: boardBgColor, padding: BOARD_PADDING / 2 }]}>
+        //                     {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor }]} />))}
+        //                 </View>
+
 // {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor }]} />))}
 
-    let flag = true;
+let flag = true;
 const s = StyleSheet.create({
     container: {
         flex: 1,
@@ -191,24 +307,27 @@ const s = StyleSheet.create({
         alignItems: "center"
     },
     board: {
-        backgroundColor: boardBgColor,
         height: BOARD_SIDE,
         width: BOARD_SIDE,
         padding: BOARD_PADDING,
         display: "flex",
         flexDirection: "row",
         flexWrap: "wrap",
-        borderRadius: 3
+        borderRadius: 3,
+        position: "relative"
     },
     cell: {
         height: CELL_SIDE,
         width: CELL_SIDE,
         borderWidth: CELL_PADDING,
-        borderColor: boardBgColor,
+        borderColor: "rgba(0,0,0,0)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        borderRadius: 10
+        borderRadius: 10,
+        position: "absolute",
+        left: 0,
+        top: 0
     },
     cellValue: {
         color: "#333"
