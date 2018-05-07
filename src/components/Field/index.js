@@ -15,7 +15,7 @@ import {
         
 import GestureRecognizer, { swipeDirections } from '../GestureRecognizer';
 import { BOARD_SIDE } from "config/metrics";
-import * as Animatable from 'react-native-animatable';
+import * as Animatable from 'react-native-animatable-promise';
 
 // metrics
 const CELLS = 3;
@@ -76,42 +76,47 @@ class Field extends Component {
         switch (direction) {
             
           case SWIPE_UP:
-            this.swipeVertical(false);
+            this.swipe(false, false);
             break;
           case SWIPE_DOWN:
-            this.swipeVertical(true);
+            this.swipe(false, true);
             break;
           case SWIPE_LEFT:
-            this.swipeHorizontal(false);
+            this.swipe(true, false);
             break;
           case SWIPE_RIGHT:
-            this.swipeHorizontal(true);
+            this.swipe(true, true);
             break;
         }
     }
     
-    
-    swipeHorizontal( isRight=false ) {
-        
-    }
-    
-    swipeVertical( isDown=false ) {
+ 
+    swipe( isHorizontal=false, isReverse=false ) {
         let aniLegend = [];// { from: idFrom, to: idTo };
         const byid = { ...this.state.byid };
         
         let columns = [];
-        
-        for (let i = 1; i <= CELLS; i++) {
-            let col = [];
-            for (let j = 0; j < CELLS; j++) {
-                col.push(i + CELLS * j);
-            }
-            columns.push(col);
+        if (isHorizontal) {
+            for (let i = 0; i < CELLS; i++) {
+                let col = [];
+                for (let x = 1; x <= CELLS; x++) {
+                    col.push(i * CELLS + x);
+                }
+                columns.push(col);
+        }
+        } else {
+            for (let i = 1; i <= CELLS; i++) {
+                let col = [];
+                for (let j = 0; j < CELLS; j++) {
+                    col.push(i + CELLS * j);
+                }
+                columns.push(col);
+            } 
         }
     
         // revers order if to down scroll
         
-        if (isDown) columns.forEach((col) => col.reverse());
+        if (isReverse) columns.forEach((col) => col.reverse());
     
         for (let j = 0; j < columns.length; j++) {
             let column = columns[j];
@@ -121,14 +126,22 @@ class Field extends Component {
                 //if blank empty
                 if (value == 0) continue;
                 let prevIndex = i - 1;
-                //if empty and not a wall
+                
+             
+                //if not a wall and empty
                 while(
-                    byid[column[prevIndex]] 
-                    && ((prevIndex != -1 && prevIndex != column.length )
-                    || byid[column[prevIndex]].value == 0)) {
+                    byid[column[prevIndex]] && byid[column[prevIndex]].value == 0
+                    ) {
                         
                     let prevId = column[prevIndex];
                     let prevElem = byid[prevId];
+                    //     console.log(`interation index ${prevIndex}`);
+                    //   if (value == 4) {
+                    //         console.log(`i ${i}`)
+                    //         console.log(`prev index ${prevIndex}`)
+                    //         console.log(`prev id ${prevId}`)
+                    //         console.log(prevElem);
+                    //     }
                     
                     if (prevElem.value == value) {
                         //merge
@@ -151,37 +164,34 @@ class Field extends Component {
                 }
             }
         }
+        console.log(byid);
+        this.animateSwipe(aniLegend).then(() => {
+            this.setState(() => ({ byid }));
+        })
         
-        // console.log(byid);
-        // console.log(aniLegend);
-        
-        this.setState(() => ({ byid }));
+        // this.setState(() => ({ byid }));
     }
     
     animateSwipe(legend) {
-        let receipt = legend[0];
-        
-        let from = this.getCoords(receipt.fromId);
-        let to = this.getCoords(receipt.toId);
-        let dx = to.x - from.x;
-        let dy = to.y - from.y;
-        
-        let refKey = `cell${receipt.fromId}`;
-        let cell = this[refKey];
-        if (cell) {
-            cell.transitionTo(
-                { left: to.x, top: to.y },
-                TIMING.swipe
-            )
-        }
-        
-        
-        // Promise.all(
-        //     legend.map((recept) => {
+        return Promise.all(
+            legend.map( (receipt, i) => {
+            
+                let from = this.getCoords(receipt.fromId);
+                let to = this.getCoords(receipt.toId);
+                let dx = to.x - from.x;
+                let dy = to.y - from.y;
                 
-        //         return ( )
-        //     })    
-        // );   
+                let refKey = `cell${receipt.fromId}`;
+                let cell = this[refKey];
+                if (cell) {
+                    return cell.transitionTo(
+                        { left: to.x, top: to.y },
+                        TIMING.swipe
+                    )
+                }
+                
+            })
+        )
     }
     
     clear() {
@@ -200,21 +210,28 @@ class Field extends Component {
         // ])
         
         
-        this.spawn();
+        this.spawn(1, 2);
+        setTimeout(() => { this.spawn(2, 4) }, 0);
         // setTimeout(() => this.spawn(), 100);
         
-        setTimeout(() => {this.animateSwipe([{ fromId: 2, toId: 5 }]);}, 250);
+        // setTimeout(() => {
+        //     this.animateSwipe(
+        //         [
+        //             { fromId: 2, toId: 5 },
+        //             { fromId: 1, toId: 7 }
+        //         ]
+                
+        //         ).then(() => alert("finished!"))
+        // }, 250);
     }
     
-    spawn() {
+    spawn(id, value) {
         const { ids, byid } = this.state;
         
         let freeCells = ids.slice().filter((id) => ( byid[id].value == 0 ));
-        let id = freeCells[~~(Math.random()*freeCells.length)];
-        let value = Math.random() < 0.1 ? 4 : 2;
-        //
-            id = 2;
-        //
+        if (!id) id = freeCells[~~(Math.random()*freeCells.length)];
+        if (!value) value = Math.random() < 0.5 ? 4 : 2;
+
         this.setState(() => ({
             byid: {
                 ...this.state.byid,
@@ -237,6 +254,10 @@ class Field extends Component {
         const { ids, byid } = this.state;
         const { colorSheme } = this.props;
         const colors = colorShemes[colorSheme];
+        
+        
+        console.log("render");
+        console.log(byid);
         
         return(
                 <GestureRecognizer 
