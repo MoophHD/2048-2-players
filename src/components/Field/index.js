@@ -27,13 +27,15 @@ const CELL_SIDE = ( BOARD_SIDE - 2*BOARD_PADDING) / CELLS;
 // cell / board stuff
 const TIMING = {
     spawn: 125,
-    swipe: 100
+    merge: 100,
+    swipe: 85
 }
 
 const GESTURE_RESPONDER_CONFIG = {
-  velocityThreshold: 0.3,
-  directionalOffsetThreshold: 40
+  velocityThreshold: 0.2,
+  directionalOffsetThreshold: 80
 };
+
 
 // let last
 class Field extends Component {
@@ -43,13 +45,18 @@ class Field extends Component {
         const BOARD_SIZE = CELLS * CELLS;
         let ids = Array.from(new Array(BOARD_SIZE),(val,index)=>index + 1);
         let byid = {};
+        let affectedByid = {};
         
         ids.forEach((id) => { byid[id] = { value: 0 }; } );
+        ids.forEach((id) => { affectedByid[id] = 0 } );
         
         this.state = {
             ids,
-            byid
+            byid,
+            affectedByid
         }
+        
+        this.previousByid = byid;
         
         this.handleSwipe = this.handleSwipe.bind(this);
     }
@@ -72,7 +79,7 @@ class Field extends Component {
     
     handleSwipe(direction, state) {
         const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
-        
+        console.log(`swipe dir ${direction}`)
         switch (direction) {
             
           case SWIPE_UP:
@@ -92,8 +99,13 @@ class Field extends Component {
     
  
     swipe( isHorizontal=false, isReverse=false ) {
-        let aniLegend = [];// { from: idFrom, to: idTo };
-        const byid = { ...this.state.byid };
+        let swipeLegend = [];// { from: idFrom, to: idTo };
+        let mergeLegend = []; // [id1, id2 ];
+        let affectedCells = [];
+        
+        let byid = { ...this.state.byid };
+        let affectedByid = { ...this.state.affectedByid };
+        let byidBackUp = JSON.parse(JSON.stringify(byid));
         
         let columns = [];
         if (isHorizontal) {
@@ -115,7 +127,6 @@ class Field extends Component {
         }
     
         // revers order if to down scroll
-        
         if (isReverse) columns.forEach((col) => col.reverse());
     
         for (let j = 0; j < columns.length; j++) {
@@ -126,26 +137,23 @@ class Field extends Component {
                 //if blank empty
                 if (value == 0) continue;
                 let prevIndex = i - 1;
-                
              
                 //if not a wall and empty
                 while(
-                    byid[column[prevIndex]] && byid[column[prevIndex]].value == 0
+                    byid[column[prevIndex]] && ( byid[column[prevIndex]].value == 0  || byid[column[prevIndex]].value == value)
                     ) {
                         
                     let prevId = column[prevIndex];
                     let prevElem = byid[prevId];
-                    //     console.log(`interation index ${prevIndex}`);
-                    //   if (value == 4) {
-                    //         console.log(`i ${i}`)
-                    //         console.log(`prev index ${prevIndex}`)
-                    //         console.log(`prev id ${prevId}`)
-                    //         console.log(prevElem);
-                    //     }
                     
                     if (prevElem.value == value) {
                         //merge
-                        aniLegend.push({ fromId: id, toId: column[prevIndex] })
+                        swipeLegend.push({ fromId: id, toId: column[prevIndex] })
+                        mergeLegend.push(prevId);
+                        
+                        affectedCells.push(id);
+                        affectedCells.push(column[prevIndex]);
+                        
                         byid[prevId] = { value: value * 2 };
                         byid[id].value = 0;
                         
@@ -158,36 +166,74 @@ class Field extends Component {
                     
                     //move BEFORE wall || next taken block
                     let prevId = column[prevIndex + 1];
-                    aniLegend.push({ fromId: id, toId: prevId })
+                    swipeLegend.push({ fromId: id, toId: prevId })
+                
+                    affectedCells.push(id);
+                    affectedCells.push(prevId);
+                    
                     byid[id].value = 0;
                     byid[prevId].value = value;
                 }
+                
             }
         }
-        console.log(byid);
-        this.animateSwipe(aniLegend).then(() => {
-            this.setState(() => ({ byid }));
-        })
         
-        // this.setState(() => ({ byid }));
+        
+        if (JSON.stringify(byid) == JSON.stringify(byidBackUp)) return;
+        
+        for (let i = 0; i < byid.length; i++ ) {
+            let idFrom = byid[i].fromId;
+            let idTo = byid[i].toId;
+            
+            if (affectedCells.indexOf(idFrom) == -1) affectedCells.push(idFrom);
+            if (affectedCells.indexOf(idTo) == -1) affectedCells.push(idTo);
+        }
+        
+        for (let i = 0; i < affectedCells.length; i++) affectedByid[affectedCells[i]] +=1;
+        
+        this.previousByid = byidBackUp;
+        this.animateSwipe(swipeLegend).then(() => {
+            setTimeout(() => {
+                this.setState(() => ({ byid, affectedByid }), () => { 
+                    this.spawn() 
+                    this.animateMerge(mergeLegend);
+                });
+            }, 13);
+        })
+    }
+    
+    animateMerge(legend) {
+        return Promise.all(
+            legend.map(( id ) => (
+                this[`cell${id}`].bounceIn(TIMING.merge)
+                )
+            )
+        )
     }
     
     animateSwipe(legend) {
         return Promise.all(
             legend.map( (receipt, i) => {
-            
-                let from = this.getCoords(receipt.fromId);
                 let to = this.getCoords(receipt.toId);
-                let dx = to.x - from.x;
-                let dy = to.y - from.y;
                 
                 let refKey = `cell${receipt.fromId}`;
                 let cell = this[refKey];
+                
+                // const cellStyles = cell.props.style[1];
                 if (cell) {
                     return cell.transitionTo(
                         { left: to.x, top: to.y },
-                        TIMING.swipe
+                        TIMING.swipe,
+                        "ease-in"
                     )
+                    
+                    // cell.transitionTo(
+                    //     { left: to.x, top: to.y },
+                    //     TIMING.swipe,
+                    //     "ease-in"
+                    // )
+                    
+                    // return new Promise((res) => { setTimeout(res, TIMING.swipe )});
                 }
                 
             })
@@ -195,7 +241,6 @@ class Field extends Component {
     }
     
     clear() {
-        
         let byid = {};
         this.state.ids.forEach((id) => { byid[id] = { value: 0 }; } );
         this.setState(() => ({
@@ -204,33 +249,25 @@ class Field extends Component {
     }
     
     start() {
-        // Promise.all([
-        //     this[`cell1`].zoomIn(TIMING.spawn),
-        //     this[`cell2`].zoomIn(TIMING.spawn)
-        // ])
-        
-        
         this.spawn(1, 2);
-        setTimeout(() => { this.spawn(2, 4) }, 0);
-        // setTimeout(() => this.spawn(), 100);
-        
-        // setTimeout(() => {
-        //     this.animateSwipe(
-        //         [
-        //             { fromId: 2, toId: 5 },
-        //             { fromId: 1, toId: 7 }
-        //         ]
-                
-        //         ).then(() => alert("finished!"))
-        // }, 250);
+        setTimeout(() => { this.spawn(2, 2) }, 0);
+        setTimeout(() => { this.spawn(3, 4) }, 0);
+
+    }
+    
+    onLose() {
+        this.props.onLose();
     }
     
     spawn(id, value) {
         const { ids, byid } = this.state;
         
         let freeCells = ids.slice().filter((id) => ( byid[id].value == 0 ));
+        
+        if (freeCells.length == 0) this.onLose();
+        
         if (!id) id = freeCells[~~(Math.random()*freeCells.length)];
-        if (!value) value = Math.random() < 0.5 ? 4 : 2;
+        if (!value) value = Math.random() < 0.1 ? 4 : 2;
 
         this.setState(() => ({
             byid: {
@@ -251,13 +288,9 @@ class Field extends Component {
         
     }
     render() {
-        const { ids, byid } = this.state;
+        const { ids, byid, affectedByid } = this.state;
         const { colorSheme } = this.props;
         const colors = colorShemes[colorSheme];
-        
-        
-        console.log("render");
-        console.log(byid);
         
         return(
                 <GestureRecognizer 
@@ -272,10 +305,7 @@ class Field extends Component {
                
                     <View style={s.board}>
                         <View style={{position: "relative", flex: 1, backgroundColor:"rgba(0,0,0,0)"}}>
-                            <View style={[s.board, { backgroundColor: boardBgColor, padding: 0, left: 0, top: 0, position: "relative" }]}>
-                                {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor, position: "relative" }]} />))}
-                            </View>
-    
+                           
          
                             {ids.map((id) => {
                                 let cell = byid[id];
@@ -289,10 +319,12 @@ class Field extends Component {
                                 }
                                 let textCl = value > 4 ? lightTextCl : darkTextCl;
                                 const pos = this.getCoords(id);
+                                let affectedIndex = affectedByid[id];
+                                
                                 return (
                                     value > 0 &&
                                         <Animatable.View
-                                            key={id}
+                                            key={`${id}${affectedIndex}`}
                                             style={[s.cell, { backgroundColor: cellCl,
                                                               left: pos.x,
                                                               top: pos.y
@@ -313,11 +345,10 @@ class Field extends Component {
     }
 }
 
-        // <View style={[s.board, { backgroundColor: boardBgColor, padding: BOARD_PADDING / 2 }]}>
-        //                     {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor }]} />))}
-        //                 </View>
 
-// {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor }]} />))}
+//  <View style={[s.board, { backgroundColor: boardBgColor, padding: 0, left: 0, top: 0, position: "relative" }]}>
+//                                 {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor, position: "relative" }]} />))}
+//                             </View>
 
 let flag = true;
 const s = StyleSheet.create({
@@ -325,7 +356,8 @@ const s = StyleSheet.create({
         flex: 1,
         display: "flex",
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0)"
     },
     board: {
         height: BOARD_SIDE,
@@ -356,7 +388,8 @@ const s = StyleSheet.create({
 })
 
 Field.propTypes = {
-    colorSheme: PropTypes.string
+    colorSheme: PropTypes.string.isRequired,
+    onLose: PropTypes.func.isRequired
 }
 
 export default Field;
