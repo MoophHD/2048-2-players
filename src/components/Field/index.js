@@ -36,6 +36,12 @@ const GESTURE_RESPONDER_CONFIG = {
   directionalOffsetThreshold: 80
 };
 
+const zoomUp = {
+    0: { scale: 1 },
+    0.3: { scale: 1.35 },
+    1: { scale: 1 }
+}
+
 
 // let last
 class Field extends Component {
@@ -59,6 +65,16 @@ class Field extends Component {
         this.previousByid = byid;
         
         this.handleSwipe = this.handleSwipe.bind(this);
+        
+        Animatable.initializeRegistryWithDefinitions({ zoomUp });
+    }
+    
+    componentWillReceiveProps( nextProps ) {
+        if (this.props.backId != nextProps.backId) {
+            if ( JSON.stringify(this.byid) != JSON.stringify(this.previousByid) ) {
+                this.setState(() => ({ byiid: this.previousByid }));
+            }
+        }
     }
     
     getCoords(id) {
@@ -79,7 +95,7 @@ class Field extends Component {
     
     handleSwipe(direction, state) {
         const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
-        console.log(`swipe dir ${direction}`)
+        console.log(direction);
         switch (direction) {
             
           case SWIPE_UP:
@@ -137,28 +153,28 @@ class Field extends Component {
                 //if blank empty
                 if (value == 0) continue;
                 let prevIndex = i - 1;
-             
                 //if not a wall and empty
                 while(
-                    byid[column[prevIndex]] && ( byid[column[prevIndex]].value == 0  || byid[column[prevIndex]].value == value)
+                    byid[column[prevIndex]]  
+                    && ( byid[column[prevIndex]].value == 0  || ( byid[column[prevIndex]].value == value && mergeLegend.indexOf(column[prevIndex]) == -1 ))
                     ) {
                         
                     let prevId = column[prevIndex];
                     let prevElem = byid[prevId];
-                    
                     if (prevElem.value == value) {
                         //merge
                         swipeLegend.push({ fromId: id, toId: column[prevIndex] })
                         mergeLegend.push(prevId);
                         
                         affectedCells.push(id);
-                        affectedCells.push(column[prevIndex]);
+                        affectedCells.push(prevId);
                         
                         byid[prevId] = { value: value * 2 };
                         byid[id].value = 0;
                         
                         continue lowerCycle;
                     }
+                    
                     prevIndex--;
                 }
                 
@@ -193,19 +209,17 @@ class Field extends Component {
         
         this.previousByid = byidBackUp;
         this.animateSwipe(swipeLegend).then(() => {
-            setTimeout(() => {
-                this.setState(() => ({ byid, affectedByid }), () => { 
-                    this.spawn() 
-                    this.animateMerge(mergeLegend);
-                });
-            }, 13);
+            this.setState(() => ({ byid, affectedByid }), () => { 
+                this.spawn() 
+                this.animateMerge(mergeLegend);
+            });
         })
     }
     
     animateMerge(legend) {
         return Promise.all(
             legend.map(( id ) => (
-                this[`cell${id}`].bounceIn(TIMING.merge)
+                    this[`cell${id}`].zoomUp(TIMING.merge)
                 )
             )
         )
@@ -345,11 +359,6 @@ class Field extends Component {
     }
 }
 
-
-//  <View style={[s.board, { backgroundColor: boardBgColor, padding: 0, left: 0, top: 0, position: "relative" }]}>
-//                                 {ids.map((id) => (<View key={`bgUnderCell${id}`} style={[s.cell, { backgroundColor: underBoxColor, position: "relative" }]} />))}
-//                             </View>
-
 let flag = true;
 const s = StyleSheet.create({
     container: {
@@ -389,7 +398,8 @@ const s = StyleSheet.create({
 
 Field.propTypes = {
     colorSheme: PropTypes.string.isRequired,
-    onLose: PropTypes.func.isRequired
+    onLose: PropTypes.func.isRequired,
+    backId: PropTypes.number.isRequired
 }
 
 export default Field;

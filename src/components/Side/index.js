@@ -9,12 +9,21 @@ class Side extends Component {
         
         this.state = {
             isLost: false,
-            score: 0
+            score: 0,
+            backId: 0
         }
     }
     
-    handleLose() {
+    onBack() {
+        this.setState(() => ({ backId: this.state.backId + 1 }));
+    }
+    
+    onLose() {
         
+    }
+    
+    handleLose() {
+        this.setState(() => ({ isLost: true }));
     }
     
     onMerge(values=[]) {
@@ -26,10 +35,13 @@ class Side extends Component {
     }
     
     render() {
-        const { colorSheme, degree=0 } = this.props;
+        const { isLost, backId, score } = this.state;
+        const { rotate=0 } = this.props;
+        const colorSheme = "orange";
         return(
-            <View style={[s.container, { transform: [ {rotate: `${degree}deg`} ] }]}>
-                <Field 
+            <View style={[s.container, { transform: [ {rotate: `${rotate}deg`} ] }]}>
+                <Field
+                    backId={ backId }
                     onLose={() => this.handleLose()}
                     colorSheme={colorSheme}
                     />
@@ -46,8 +58,7 @@ const s = StyleSheet.create({
 })
 
 Side.propTypes = {
-    degree: PropTypes.number,
-    colorSheme: PropTypes.string
+    degree: PropTypes.number
 }
 
 export default Side;

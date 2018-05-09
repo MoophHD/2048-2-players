@@ -1,4 +1,4 @@
-export const bgColor = "white";
+export const bgColor = "#e6e4e2";
 
 export const boardBgColor = "#BBADA0";
 export const underBoxColor = "#D6CDC4";
