@@ -34,6 +34,8 @@ class Side extends Component {
         if (plusPoints) this.setState(() => ({ score: this.state.score + plusPoints }));
     }
     
+    
+    
     render() {
         const { isLost, backId, score } = this.state;
         const { rotate=0 } = this.props;
@@ -41,6 +43,8 @@ class Side extends Component {
         return(
             <View style={[s.container, { transform: [ {rotate: `${rotate}deg`} ] }]}>
                 <Field
+                    rotation={rotate}
+                    onMerge={this.onMerge}
                     backId={ backId }
                     onLose={() => this.handleLose()}
                     colorSheme={colorSheme}

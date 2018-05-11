@@ -95,9 +95,19 @@ class Field extends Component {
     
     handleSwipe(direction, state) {
         const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
-        console.log(direction);
-        switch (direction) {
-            
+        const rot = this.props.rotation
+        
+        let realDir;
+        if (rot == 0) {
+            realDir = direction;
+        } else if (rot == 180) {
+            if (realDir == SWIPE_UP) realDir = SWIPE_DOWN
+            else if (realDir == SWIPE_DOWN) realDir = SWIPE_UP
+            else if (realDir == SWIPE_LEFT) realDir = SWIPE_RIGHT
+            else if (realDir == SWIPE_RIGHT) realDir =SWIPE_LEFT
+        }
+        
+        switch (realDir) {
           case SWIPE_UP:
             this.swipe(false, false);
             break;
@@ -178,6 +188,7 @@ class Field extends Component {
                     prevIndex--;
                 }
                 
+                
                 if (prevIndex < i - 1) {
                     
                     //move BEFORE wall || next taken block
@@ -211,7 +222,7 @@ class Field extends Component {
         this.animateSwipe(swipeLegend).then(() => {
             this.setState(() => ({ byid, affectedByid }), () => { 
                 this.spawn() 
-                this.animateMerge(mergeLegend);
+                this.animateMerge(mergeLegend).then(() => this.props.onMerge(mergeLegend))
             });
         })
     }
@@ -399,7 +410,9 @@ const s = StyleSheet.create({
 Field.propTypes = {
     colorSheme: PropTypes.string.isRequired,
     onLose: PropTypes.func.isRequired,
-    backId: PropTypes.number.isRequired
+    backId: PropTypes.number.isRequired,
+    onMerge: PropTypes.func.isRequired,
+    rotation: PropTypes.number.isRequired
 }
 
 export default Field;
