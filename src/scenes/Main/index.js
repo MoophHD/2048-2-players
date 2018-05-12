@@ -17,10 +17,6 @@ class Main extends Component {
             readyState: {
                 0: false,
                 1: false
-            },
-            rotationState: {
-                0: 180,
-                1: 0
             }
         }
     }
@@ -44,31 +40,24 @@ class Main extends Component {
         
     }
     
-    // rotate(id) {
-    //     if (id == 0) {
-            
-    //     }
-    // }
-    
     render() {
-        const { readyState, isTimedMode, time, rotationState } = this.state;
-        const arePlayersOpposite = rotationState[0] == 180 && rotationState[1] == 0;
+        const { readyState, isTimedMode, time } = this.state;
         return(
             <View style={s.container}>
                 <Side 
-                    rotate={rotationState[0]}
+                    degree={180}
                     id={0}
                     time = { isTimedMode ? time : -1 }
                     readyState={readyState}/>
                 <Side 
-                    rotate={rotationState[1]}
+                    degree={0}
                     id={1}
                     time = { isTimedMode ? time : -1 }
                     readyState={readyState}/>
                 
                 <View style={s.absoluteCenterWrapper}>
                     <IconContainer
-                        arePlayersOpposite={arePlayersOpposite}
+                        arePlayersOpposite={true}
                         onTimeTap={() => this.handleTimeTap()}
                         onInfinityTap={() => this.handleInfinityTap()} />
                 </View>

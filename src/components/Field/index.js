@@ -12,6 +12,7 @@ import {
         colorShemes,
         boardBgColor,
         underBoxColor } from "config/colors";
+import MyText from 'components/MyText';
         
 import GestureRecognizer, { swipeDirections } from '../GestureRecognizer';
 import { BOARD_SIDE } from "config/metrics";
@@ -95,16 +96,16 @@ class Field extends Component {
     
     handleSwipe(direction, state) {
         const {SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT} = swipeDirections;
-        const rot = this.props.rotation
+        const rot = this.props.rotation;
         
         let realDir;
         if (rot == 0) {
             realDir = direction;
         } else if (rot == 180) {
-            if (realDir == SWIPE_UP) realDir = SWIPE_DOWN
-            else if (realDir == SWIPE_DOWN) realDir = SWIPE_UP
-            else if (realDir == SWIPE_LEFT) realDir = SWIPE_RIGHT
-            else if (realDir == SWIPE_RIGHT) realDir =SWIPE_LEFT
+            if (direction == SWIPE_UP) realDir = SWIPE_DOWN
+            else if (direction == SWIPE_DOWN) realDir = SWIPE_UP
+            else if (direction == SWIPE_LEFT) realDir = SWIPE_RIGHT
+            else if (direction == SWIPE_RIGHT) realDir =SWIPE_LEFT
         }
         
         switch (realDir) {
@@ -316,7 +317,6 @@ class Field extends Component {
         const { ids, byid, affectedByid } = this.state;
         const { colorSheme } = this.props;
         const colors = colorShemes[colorSheme];
-        
         return(
                 <GestureRecognizer 
                     config={GESTURE_RESPONDER_CONFIG}
@@ -357,9 +357,13 @@ class Field extends Component {
                                             
                                             ref={el => { if (el) this[`cell${id}`] = el }}>
                                             
-                                            <Text style={[s.cellValue, {color: textCl} ]}>
+                                            <MyText   
+                                                size={23}
+                                                bold={true}
+                                                style={[s.cellValue, {color: textCl} ]}>
                                                 {value}
-                                            </Text>
+                                            </MyText>
+                                            
                                         </Animatable.View>
                                 )
                             })}

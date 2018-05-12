@@ -7,23 +7,32 @@ const getAdjustedSize = ( size ) => {
     return Math.round(size * DEVICE_HEIGHT / 375);
 }
 
-const MyText = ({ children, style, size }) => (
-    <Text style={[
-        s.text,
-        {
-            fontSize: getAdjustedSize(size || 16),
-            ...style
-        }
-    ]}>
-        {children}
-    </Text>
-)
+const MyText = ({ children, style, size, bold }) => {
+    if (Array.isArray(style)) style = style[1];
+    let font = bold ? "open-sans-bold" : "open-sans-regular";
+    return ( 
+        <Text style={[
+            s.text,
+            {
+                fontSize: getAdjustedSize(size || 16),
+                fontFamily: font,
+                ...style
+            }
+        ]}>
+            {children}
+        </Text>
+    )
+}
 
 const s = StyleSheet.create({
     text: {
-        color: "#333",
-        fontFamily: "open-sans-regular"
+        color: "#333"
     }
 })
+
+MyText.propTypes = {
+    size: PropTypes.number,
+    bold: PropTypes.bool
+}
 
 export default MyText;

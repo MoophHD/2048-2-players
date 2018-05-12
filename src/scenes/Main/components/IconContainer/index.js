@@ -38,10 +38,11 @@ class IconContainer extends Component {
         return(
             <View style={s.container}>
                 <TouchableOpacity 
+                
+                    disabled={isInfinityActive}
                     activeOpacity={iconOpacity}
                     onPress={() => this.onInfinityTap()}>
                     <View  
-                        
                         style={[s.icon, 
                         {   opacity: isInfinityActive ? 1 : iconOpacity,
                             transform: [{rotate: `${arePlayersOpposite ? 270 : 180}deg`}]}]}>
@@ -54,6 +55,8 @@ class IconContainer extends Component {
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
+                
+                    disabled={!isInfinityActive}
                     activeOpacity={iconOpacity}
                     onPress={() => this.onTimeTap()}>
                     <View style={[s.icon, {
