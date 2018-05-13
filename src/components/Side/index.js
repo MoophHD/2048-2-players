@@ -1,21 +1,20 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { View, StyleSheet, TouchableHighlight } from 'react-native';
+import { View, StyleSheet, TouchableHighlight, TouchableWithoutFeedback } from 'react-native';
 import Field from '../Field';
+import { Entypo } from "@expo/vector-icons";
+import { getAdjustedSize } from 'config/gist';
+import { mainCl, subCl } from 'config/colors';
+import { GAME_STATES } from "config/constants";
 
-const GAME_STATES = {
-    PLAYING: "PLAYING",
-    IDLE: "IDLE",
-    LOST: "LOST"
-}
+const iconSize = 32;
+const adjustedIconSize = getAdjustedSize(iconSize);
 
 class Side extends Component {
     constructor(props) {
         super(props);
         
         this.state = {
-            gameState: GAME_STATES.PLAYING,
-            score: 0,
             backId: 0
         }
         
@@ -26,12 +25,8 @@ class Side extends Component {
         this.setState(() => ({ backId: this.state.backId + 1 }));
     }
     
-    onLose() {
-        this.setState(() => ({  }))
-    }
-    
     handleLose() {
-        this.setState(() => ({ isLost: true }));
+        this.props.onLose();
     }
     
     onMerge(values=[]) {
@@ -39,29 +34,45 @@ class Side extends Component {
         
         for (let i = 0; i < values.length; i++) plusPoints += values[i];
         
-        if (plusPoints) this.setState(() => ({ score: this.state.score + plusPoints }));
+        if (plusPoints) this.props.onScoreAdd(plusPoints);
     }
     
     
-    
     render() {
-        const { gameState, backId, score } = this.state;
-        const { degree=0 } = this.props;
+        const { backId } = this.state;
+        const { degree=0, readyState, id, onReady, state, score } = this.props;
         const colorSheme = "orange";
+        
+        const isEnemyReady = readyState[ id == 0 ? 1 : 0];
+        const isReady = readyState[id];
+        
         return(
             <View style={[s.container, { transform: [ {rotate: `${degree}deg`} ] }]}>
        
                 
                 <View style={{flex: 1}}>
+                
                     {
-                        gameState == GAME_STATES.LOST && 
-                            <View style={s.loseContainer}>
+                        state == GAME_STATES.LOST && 
+                            <View style={s.dimContainer}>
                                 <TouchableHighlight onPress={() => this.onRestart()}>
-                                    <View style={s.restartBtn}>
+                                    <View style={s.centeredBtn}>
                                         R
                                     </View>
                                 </TouchableHighlight>
                             </View>
+                    }
+                    
+                    {
+                        state == GAME_STATES.IDLE && 
+                           <TouchableHighlight onPress={onReady}>
+                                <View style={s.dimContainer}>
+                                    <View style={s.readyContainer}>
+                                        <View style={[ s.readyBall, { backgroundColor: isReady ? mainCl : subCl } ]} />
+                                        <View style={[ s.readyBall, { backgroundColor: isEnemyReady ? mainCl : subCl } ]} />
+                                    </View>
+                                </View>
+                            </TouchableHighlight>
                     }
                     <Field
                         rotation={degree}
@@ -83,11 +94,21 @@ const s = StyleSheet.create({
         flex: 1,
         position: "relative"
     },
-    loseContainer: {
-        backgroundColor: 'rgba(0,0,0,.15)'
+    dimContainer: {
+        backgroundColor: "rgba(0,0,0,0)",
+        height: '100%',
+        width: '100%',
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
     },
-    restartBtn: {
-        
+    centeredBtn: {
+        width: 75,
+        height: 75,
+        backgroundColor: "crimson",
+        justifyContent: "center",
+        alignItems: "center",
+        display: "flex"
     }
 })
 
