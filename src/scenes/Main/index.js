@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar  } from 'react-native';
 import Side from "components/Side";
 import { bgColor } from 'config/colors';
 import MyText from "components/MyText";
@@ -24,7 +24,7 @@ class Main extends Component {
               0: 0,
               1: 0
             },
-            gameState: GAME_STATES.IDLE
+            gameState: GAME_STATES.PLAYING
         }
         
         this.handleReady = this.handleReady.bind(this);
@@ -89,7 +89,7 @@ class Main extends Component {
         
         return(
             <View style={s.container}>
-        
+                <StatusBar  hidden={true}/>
                 <Side 
                     score={score[0]}
                     id={0}

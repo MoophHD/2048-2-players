@@ -2,13 +2,16 @@ import React, { Component } from 'react';
 import { View, StyleSheet, TouchableHighlight } from 'react-native';
 import PropTypes from 'prop-types';
 import MyText from 'components/MyText';
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Entypo } from "@expo/vector-icons";
 import { getAdjustedSize } from 'config/gist';
-import { mainCl, subCl, mainClDarken, subClDarken } from 'config/colors';
+import { mainCl, subCl, mainClDarken, subClDarken, darkTextCl, green, red } from 'config/colors';
 import { GAME_STATES } from "config/constants";
 
-const timeSize = 32;
+const timeSize = 28;
 const adjustedTimeSize = getAdjustedSize(timeSize);
+
+const infSize = 18;
+const adjustedInfTime = getAdjustedSize(infSize);
 
 class Middle extends Component {
     constructor(props) {
@@ -33,51 +36,67 @@ class Middle extends Component {
     render() {
         const { isInfinityActive } = this.state;
         const { state, score, ready } = this.props;
-        console.log(ready);
+
         return(
+            state == GAME_STATES.PLAYING ?
             <View style={s.container}>
                 <View style={s.line} />
                 
-                
-                <View style={{borderRadius: 200, overflow: "hidden"}}>
-                    <TouchableHighlight 
-                        underlayColor={isInfinityActive ? mainClDarken : subClDarken}
-                        onPress={() => this.onInfinityTap()}>
-                        <View  
-                            style={[s.icon, 
-                            {   backgroundColor: isInfinityActive ? mainCl : subCl, }]}>
+                <View style={[s.main, { borderRadius: 5 }]}>
+
+                    <View style={{ flex: 1 }}>
+                        <View style={[s.score, { backgroundColor: score[0] != score[1] ? (score[0] > score[1] ? green : red ) : subCl }]}>
                             <MyText 
-                                size={32}
-                                style={{fontFamily: "open-sans-bold"}}>
-                                8
+                                style={{ transform: [{rotate: "180deg"}] }}>
+                                {score[0]}
                             </MyText>
+                        </View>
+
+                        <View style={[s.score, { backgroundColor: score[0] != score[1] ? (score[1] > score[0] ? green : red) : subCl }]}>
+                            <MyText>
+                                {score[1]}
+                            </MyText>
+                        </View>
+                    </View>
+                </View>
+
+            </View> 
+
+            :
+
+
+            <View style={s.container}>
+
+                <View style={s.line} />
+                
+                
+                <View style={{borderRadius: 200, overflow: "hidden", margin: iconMargin}}>
+                    <TouchableHighlight 
+                        underlayColor={isInfinityActive ? subClDarken : mainClDarken}
+                        onPress={() => this.onInfinityTap()}>
+                        <View style={[s.icon, {
+                            backgroundColor: isInfinityActive ? mainCl : subCl
+                        }]}>
+                                <Entypo size={adjustedTimeSize} name="500px" color={darkTextCl} />
                         </View>
                     </TouchableHighlight>
                 </View>
                 
                 <View style={s.main}>
              
-                    { state == GAME_STATES.IDLE ?
-                        <View style={{flex: 1}}>
-                            <View style={{flex: 1, backgroundColor: ready[0] ? mainCl : subCl }}>
-                            
-                            </View>
-        
-                            <View style={{flex: 1, backgroundColor: ready[1] ? subCl : mainCl }}>
-                            
-                            </View>
-                        </View>
-                        :
-                        <View/>
-                    }
+                    <View style={{flex: 1}}>
+                        <View style={{flex: 1, backgroundColor: ready[0] ? mainCl : subCl }} />
+    
+                        <View style={{flex: 1, backgroundColor: ready[1] ? mainCl : subCl }} />
+                    </View>
                     
-                  <View style={{height: "100%", width: "100%", position: "absolute", top:0, left: 0, display: "flex", justifyContent: "center", alignItems: "center"}}>
+                    <View style={{height: "100%", width: "100%", position: "absolute", top:0, left: 0, display: "flex", justifyContent: "center", alignItems: "center"}}>
                         <View style={s.mainLine} />
                     </View>
                 </View>
                 
                            
-                <View style={{borderRadius: 200, overflow: "hidden"}}>
+                <View style={{ borderRadius: 200, overflow: "hidden", margin: iconMargin }}>
                     <TouchableHighlight 
                         underlayColor={!isInfinityActive ? mainClDarken : subClDarken}
                         disabled={!isInfinityActive}
@@ -85,7 +104,7 @@ class Middle extends Component {
                         <View style={[s.icon, {
                                 backgroundColor: !isInfinityActive ? mainCl : subCl,
                                 transform: [{rotate: `45deg`}]}]}>
-                            <Ionicons size={adjustedTimeSize} name="md-time" color="#333" />
+                                <Ionicons size={adjustedTimeSize} name="md-time" color={darkTextCl} />
                         </View>
                     </TouchableHighlight>
                 </View>
@@ -103,7 +122,7 @@ Middle.propTypes = {
     onTimeTap: PropTypes.func,
     arePlayersOpposite: PropTypes.bool
 }
-const iconMargin = 13.5;
+const iconMargin = 19.5;
 const iconOpacity = .35;
 
 const lnWidth = 3;
@@ -142,18 +161,22 @@ const s = StyleSheet.create({
     },
     icon: {
         backgroundColor: "white",
-        height: 53,
-        width: 53,
+        height: 50,
+        width: 50,
         borderRadius: 1000,
         display: "flex",
-        marginLeft: iconMargin,
-        marginRight: iconMargin,
         justifyContent: "center",
         alignItems: "center",
         
         shadowColor: "#000",
         shadowOffset: { width: 2, height: 2 },
         shadowOpacity: 0.14
+    },
+    score: {
+        flex: 1,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
     }
 })
 

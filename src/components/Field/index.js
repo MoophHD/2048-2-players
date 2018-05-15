@@ -128,6 +128,7 @@ class Field extends Component {
     swipe( isHorizontal=false, isReverse=false ) {
         let swipeLegend = [];// { from: idFrom, to: idTo };
         let mergeLegend = []; // [id1, id2 ];
+        let mergeValues = [];
         let affectedCells = [];
         
         let byid = { ...this.state.byid };
@@ -176,7 +177,7 @@ class Field extends Component {
                         //merge
                         swipeLegend.push({ fromId: id, toId: column[prevIndex] })
                         mergeLegend.push(prevId);
-                        
+                        mergeValues.push(byid[prevId].value);
                         affectedCells.push(id);
                         affectedCells.push(prevId);
                         
@@ -223,7 +224,7 @@ class Field extends Component {
         this.animateSwipe(swipeLegend).then(() => {
             this.setState(() => ({ byid, affectedByid }), () => { 
                 this.spawn() 
-                this.animateMerge(mergeLegend).then(() => this.props.onMerge(mergeLegend))
+                this.animateMerge(mergeLegend).then(() => this.props.onMerge(mergeValues))
             });
         })
     }
@@ -273,11 +274,14 @@ class Field extends Component {
             byid: byid
         }))
     }
+
+    componentWillMount() {
+        this.start();
+    }
     
     start() {
-        this.spawn(1, 2);
-        setTimeout(() => { this.spawn(2, 2) }, 0);
-        setTimeout(() => { this.spawn(3, 4) }, 0);
+        this.spawn();
+        setTimeout(() => { this.spawn() }, 0);
 
     }
     
@@ -322,15 +326,14 @@ class Field extends Component {
                     config={GESTURE_RESPONDER_CONFIG}
                     onSwipe={this.handleSwipe}
                     style={s.container}>
-                    
-                    <TouchableOpacity onPress={() => { flag ? this.start() : this.clear(); flag = !flag }}>
-                        <View style={{ backgroundColor: "crimson", height: 50, width: 300, margin: 5}} />
-                    </TouchableOpacity>
- 
-               
+                  
                     <View style={s.board}>
                         <View style={{position: "relative", flex: 1, backgroundColor:"rgba(0,0,0,0)"}}>
-                           
+                        <View style={[s.board, { backgroundColor: bgColor, position: "absolute"}]}>
+                            {ids.map((id) => (
+                                <View key={`bgCell${id}`} style={[s.cell, { position: "relative", backgroundColor: underBoxColor }]} />
+                            ))}
+                        </View>
          
                             {ids.map((id) => {
                                 let cell = byid[id];
@@ -373,6 +376,8 @@ class Field extends Component {
         )
     }
 }
+
+
 
 let flag = true;
 const s = StyleSheet.create({

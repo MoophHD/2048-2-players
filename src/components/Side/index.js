@@ -32,7 +32,7 @@ class Side extends Component {
     onMerge(values=[]) {
         let plusPoints = 0;
         
-        for (let i = 0; i < values.length; i++) plusPoints += values[i];
+        for (let i = 0; i < values.length; i++) plusPoints = plusPoints + values[i] * 2;
         
         if (plusPoints) this.props.onScoreAdd(plusPoints);
     }
@@ -74,13 +74,17 @@ class Side extends Component {
                                 </View>
                             </TouchableHighlight>
                     }
-                    <Field
-                        rotation={degree}
-                        onMerge={this.onMerge}
-                        backId={ backId }
-                        onLose={() => this.handleLose()}
-                        colorSheme={colorSheme}
-                        />
+
+                    {
+                        state != GAME_STATES.IDLE &&
+                            <Field
+                                rotation={degree}
+                                onMerge={this.onMerge}
+                                backId={backId}
+                                onLose={() => this.handleLose()}
+                                colorSheme={colorSheme}
+                            />
+                    }
                 </View>
                 
     
