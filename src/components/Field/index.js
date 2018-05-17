@@ -28,8 +28,8 @@ const CELL_SIDE = ( BOARD_SIDE - 2*BOARD_PADDING) / CELLS;
 // cell / board stuff
 const TIMING = {
     spawn: 125,
-    merge: 100,
-    swipe: 85
+    merge: 65,
+    swipe: 80
 }
 
 const GESTURE_RESPONDER_CONFIG = {
@@ -251,7 +251,7 @@ class Field extends Component {
                     return cell.transitionTo(
                         { left: to.x, top: to.y },
                         TIMING.swipe,
-                        "ease-in"
+                        "ease-out"
                     )
                     
                     // cell.transitionTo(

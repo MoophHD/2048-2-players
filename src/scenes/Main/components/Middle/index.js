@@ -41,23 +41,19 @@ class Middle extends Component {
             state == GAME_STATES.PLAYING ?
             <View style={s.container}>
                 <View style={s.line} />
+
+                <View style={[s.scorePanel, 
+                    { marginTop: -scorePanel.height, 
+                      transform: [{rotate: "180deg"}]}]}>
+                    <MyText>
+                        {score[0]}
+                    </MyText>
+                </View>
                 
-                <View style={[s.main, { borderRadius: 5 }]}>
-
-                    <View style={{ flex: 1 }}>
-                        <View style={[s.score, { backgroundColor: score[0] != score[1] ? (score[0] > score[1] ? green : red ) : subCl }]}>
-                            <MyText 
-                                style={{ transform: [{rotate: "180deg"}] }}>
-                                {score[0]}
-                            </MyText>
-                        </View>
-
-                        <View style={[s.score, { backgroundColor: score[0] != score[1] ? (score[1] > score[0] ? green : red) : subCl }]}>
-                            <MyText>
-                                {score[1]}
-                            </MyText>
-                        </View>
-                    </View>
+                <View style={[s.scorePanel, { marginTop: scorePanel.height }]}>
+                    <MyText>
+                        {score[1]}
+                    </MyText>
                 </View>
 
             </View> 
@@ -113,6 +109,24 @@ class Middle extends Component {
     }
 }
 
+{/* <View style={[s.main, { borderRadius: 5 }]}>
+
+    <View style={{ flex: 1 }}>
+        <View style={[s.score, { backgroundColor: score[0] != score[1] ? (score[0] > score[1] ? green : red) : subCl }]}>
+            <MyText
+                style={{ transform: [{ rotate: "180deg" }] }}>
+                {score[0]}
+            </MyText>
+        </View>
+
+        <View style={[s.score, { backgroundColor: score[0] != score[1] ? (score[1] > score[0] ? green : red) : subCl }]}>
+            <MyText>
+                {score[1]}
+            </MyText>
+        </View>
+    </View>
+</View> */}
+
 
                     // <View style={{flex: 1, backgroundColor: ready[0] ? green : subCl}} />
                     // <View style={{flex: 1, backgroundColor: ready[1] ? green : subCl}} />
@@ -128,6 +142,11 @@ const iconOpacity = .35;
 const lnWidth = 3;
 const lnWidthThick = 4;
 
+
+const scorePanel = {
+    height: 25,
+    width: 125
+}
 const s = StyleSheet.create({
     container: {
         display: "flex",
@@ -135,6 +154,14 @@ const s = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         width: "100%"
+    },
+    scorePanel:  {
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: scorePanel.height,
+        width: scorePanel.width,
+        backgroundColor: "crimson"
     },
     main: {
         backgroundColor: subCl,

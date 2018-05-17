@@ -1,11 +1,12 @@
-export const bgColor = "#e6e4e2";
+export const bgColor = "#f5ede8";
 
 export const boardBgColor = "#BBADA0";
 export const underBoxColor = "#D6CDC4";
 export const lightTextCl = "#F9F6F3";
 export const darkTextCl = "#786F66";
 
-export const mainCl = "#FAAF3B";
+export const brightCl = "#F7AD59";
+export const mainCl = "#bdb1a5";
 export const subCl = "#d6d4d3";
 
 export const mainClDarken = shadeColor(mainCl, 15);

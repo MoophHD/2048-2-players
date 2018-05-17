@@ -92,11 +92,12 @@ class Side extends Component {
         )
     }
 }
-
+const topPadd = 10;
 const s = StyleSheet.create({
     container: {
         flex: 1,
-        position: "relative"
+        position: "relative",
+        paddingTop: topPadd
     },
     dimContainer: {
         backgroundColor: "rgba(0,0,0,0)",
