@@ -15,6 +15,7 @@ export const subClDarken = shadeColor(subCl, 15);
 
 export const red = "#FE4A49";
 export const green = "#00A676";
+export const winCl = green;
 
 export const colorShemes = {
     orange : {

@@ -9,13 +9,15 @@ const getAdjustedSize = ( size ) => {
 
 const MyText = ({ children, style, size, bold }) => {
     if (Array.isArray(style)) style = style[1];
+    if (!style || typeof style != 'object') style = {};
+    
     let font = bold ? "open-sans-bold" : "open-sans-regular";
     return ( 
         <Text style={[
             s.text,
             {
                 fontSize: getAdjustedSize(size || 16),
-                fontFamily: font,
+                fontFamily: font, 
                 ...style
             }
         ]}>

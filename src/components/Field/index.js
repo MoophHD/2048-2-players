@@ -15,15 +15,10 @@ import {
 import MyText from 'components/MyText';
         
 import GestureRecognizer, { swipeDirections } from '../GestureRecognizer';
-import { BOARD_SIDE } from "config/metrics";
 import * as Animatable from 'react-native-animatable-promise';
-
-// metrics
-const CELLS = 3;
-const CELL_PADDING = 2.5;
-const BOARD_PADDING = 5 - CELL_PADDING;
-
-const CELL_SIDE = ( BOARD_SIDE - 2*BOARD_PADDING) / CELLS;
+import { CELLS, CELL_PADDING, BOARD_PADDING, CELL_SIDE, BOARD_SIDE } from 'config/metrics';
+import Cell from './components/Cell';
+import FieldBackground from "./components/FieldBackground";
 
 // cell / board stuff
 const TIMING = {
@@ -294,10 +289,28 @@ class Field extends Component {
         
         let freeCells = ids.slice().filter((id) => ( byid[id].value == 0 ));
         
-        if (freeCells.length == 0) this.onLose();
-        
         if (!id) id = freeCells[~~(Math.random()*freeCells.length)];
         if (!value) value = Math.random() < 0.1 ? 4 : 2;
+
+        //check if has no chance to merge 
+        if (freeCells.length == 1) {
+            const nextByid = { ...byid, [id]: { value: value } };
+            let hasATurn = false;
+            for (let i = 0; i < ids.length; i++) {
+                let id = ids[i];
+                let value = nextByid[id].value;
+
+                if (nextByid[id + 1] && nextByid[id + 1].value == value
+                    || nextByid[id - 1] && nextByid[id - 1].value == value
+                    || nextByid[id + CELLS] && nextByid[id + CELLS].value == value
+                    || nextByid[id - CELLS] && nextByid[id - CELLS].value == value
+                ) {
+                    hasATurn = true;
+                    break;
+                }
+            }
+            if (!hasATurn) this.onLose();
+        }
 
         this.setState(() => ({
             byid: {
@@ -329,11 +342,8 @@ class Field extends Component {
                   
                     <View style={s.board}>
                         <View style={{position: "relative", flex: 1, backgroundColor:"rgba(0,0,0,0)"}}>
-                        <View style={[s.board, { backgroundColor: bgColor, position: "absolute"}]}>
-                            {ids.map((id) => (
-                                <View key={`bgCell${id}`} style={[s.cell, { position: "relative", backgroundColor: underBoxColor }]} />
-                            ))}
-                        </View>
+
+                            <FieldBackground />
          
                             {ids.map((id) => {
                                 let cell = byid[id];
@@ -350,24 +360,16 @@ class Field extends Component {
                                 let affectedIndex = affectedByid[id];
                                 
                                 return (
-                                    value > 0 &&
-                                        <Animatable.View
-                                            key={`${id}${affectedIndex}`}
-                                            style={[s.cell, { backgroundColor: cellCl,
-                                                              left: pos.x,
-                                                              top: pos.y
-                                            }]}
-                                            
-                                            ref={el => { if (el) this[`cell${id}`] = el }}>
-                                            
-                                            <MyText   
-                                                size={23}
-                                                bold={true}
-                                                style={[s.cellValue, {color: textCl} ]}>
-                                                {value}
-                                            </MyText>
-                                            
-                                        </Animatable.View>
+                                    value > 0 && 
+                                        <Cell 
+                                            key={`${id}${affectedIndex}`} 
+                                            innerRef={el => { this[`cell${id}`] = el }}
+                                            id={id}
+                                            pos={pos}
+                                            textCl={textCl}
+                                            cellCl={cellCl}
+                                            value={value}
+                                            />
                                 )
                             })}
                         </View>
@@ -376,7 +378,26 @@ class Field extends Component {
         )
     }
 }
+//ref={el => { this[`cell${id}`] = el}}
 
+{/* <Animatable.View
+    key={`${id}${affectedIndex}`}
+    style={[s.cell, {
+        backgroundColor: cellCl,
+        left: pos.x,
+        top: pos.y
+    }]}
+
+    ref={el => { if (el) this[`cell${id}`] = el }}>
+
+    <MyText
+        size={23}
+        bold={true}
+        style={[s.cellValue, { color: textCl }]}>
+        {value}
+    </MyText>
+
+</Animatable.View> */}
 
 
 let flag = true;

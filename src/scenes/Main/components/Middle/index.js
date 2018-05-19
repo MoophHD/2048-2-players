@@ -6,6 +6,7 @@ import { Ionicons, Entypo } from "@expo/vector-icons";
 import { getAdjustedSize } from 'config/gist';
 import { mainCl, subCl, mainClDarken, subClDarken, darkTextCl, green, red } from 'config/colors';
 import { GAME_STATES } from "config/constants";
+import { winCl } from '../../../../config/colors';
 
 const timeSize = 28;
 const adjustedTimeSize = getAdjustedSize(timeSize);
@@ -30,7 +31,6 @@ class Middle extends Component {
     onInfinityTap() {
         this.props.onInfinityTap();
         
-        
         this.setState(() => ({ isInfinityActive: true }))
     }
     render() {
@@ -45,13 +45,20 @@ class Middle extends Component {
                 <View style={[s.scorePanel, 
                     { marginTop: -scorePanel.height, 
                       transform: [{rotate: "180deg"}]}]}>
-                    <MyText>
+                    <MyText style={{ color: scorePanel.textCl}} size={scorePanel.textSize}>
                         {score[0]}
                     </MyText>
                 </View>
-                
+                    
+                <View style={s.winContainer}>
+                    <View style={[s.winTriangle, { transform: [{ rotate: "180deg" }],
+                            borderTopColor: score[0] != score[1] && score[0] > score[1] ? winCl : "rgba(0,0,0,0)"
+                        }]} />
+                    <View style={[s.winTriangle, { borderTopColor: score[0] != score[1] && score[1] > score[0] ? winCl : "rgba(0,0,0,0)" }]} />
+                </View>
+
                 <View style={[s.scorePanel, { marginTop: scorePanel.height }]}>
-                    <MyText>
+                        <MyText style={{ color: scorePanel.textCl }} size={scorePanel.textSize}>
                         {score[1]}
                     </MyText>
                 </View>
@@ -145,8 +152,11 @@ const lnWidthThick = 4;
 
 const scorePanel = {
     height: 25,
-    width: 125
+    width: 125,
+    textSize: 10,
+    textCl: darkTextCl
 }
+
 const s = StyleSheet.create({
     container: {
         display: "flex",
@@ -155,13 +165,31 @@ const s = StyleSheet.create({
         alignItems: "center",
         width: "100%"
     },
+    winContainer: {
+        display: "flex",
+        flexDirection: "column",
+        margin: 25,
+    },
+    winTriangle: {
+        borderColor: "rgba(0,0,0,0)",
+        borderTopColor: "crimson",
+        borderWidth: 40,
+        borderTopWidth: 20,
+        borderBottomWidth: 20,
+        borderRadius: 2,
+    },
     scorePanel:  {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        borderRadius: 5,
+        borderColor: mainCl,
+        borderWidth: 2,
+        borderTopColor: "rgba(0,0,0,0)",
         height: scorePanel.height,
-        width: scorePanel.width,
-        backgroundColor: "crimson"
+        width: scorePanel.width
+    },
+    scoreText: {
     },
     main: {
         backgroundColor: subCl,

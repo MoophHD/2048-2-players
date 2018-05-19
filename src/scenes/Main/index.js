@@ -70,7 +70,6 @@ class Main extends Component {
                 isTimedMode, 
                 time, 
                 gameState } = this.state;
-        console.log(readyState);
         let state0;
         let state1;
         
